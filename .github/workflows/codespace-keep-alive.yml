@@ -1,0 +1,19 @@
+name: Keep Codespace Alive (Optional - 60h/month free)
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Every 30 minutes
+  workflow_dispatch:
+
+jobs:
+  codespace-wakeup:
+    runs-on: ubuntu-latest
+    if: github.repository == 'YOUR_USERNAME/CLIProxy'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Keep workflow alive
+        run: |
+          echo "⏰ Workflow keepalive ping - $(date)"
+          # This keeps the action history alive
+          # Use with GitHub Codespaces for continuous dev environment

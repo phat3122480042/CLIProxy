@@ -1,0 +1,104 @@
+host: "0.0.0.0"
+port: 8317
+
+api-keys:
+  - "sk-antigravity"
+
+auth-dir: "./auth"
+
+# Cấu hình Key Gemini (Google) - Miễn phí
+gemini-api-key:
+  - api-key: "AIzaSy_YOUR_GEMINI_KEY_HERE"
+    models:
+      - name: "gemini-2.0-flash-exp"
+        alias: "gemini-flash"
+
+# Ánh xạ tên Model cho tài khoản Antigravity (Login Google)
+# Giúp bạn gọi tên ngắn gọn thay vì tên dài ngoằng
+oauth-model-mappings:
+  antigravity:
+    # Gemini 3 Series
+    - name: "gemini-3-pro-image-preview"
+      alias: "gemini-3-pro"
+    - name: "gemini-3-flash-preview"
+      alias: "gemini-3-flash"
+    
+    # Claude Series (via Antigravity)
+    - name: "gemini-claude-sonnet-4-5"
+      alias: "claude-4.5-sonnet"
+    - name: "gemini-claude-sonnet-4-5-thinking"
+      alias: "claude-4.5-thinking"
+    - name: "gemini-claude-opus-4-5-thinking"
+      alias: "claude-opus-4.5"
+
+    # Gemini 2.5 Series
+    - name: "gemini-2.5-flash"
+      alias: "gemini-2.5-flash"
+    - name: "gemini-2.5-flash-lite"
+      alias: "gemini-2.5-lite"
+    
+    # Gemini 2.0 Flash
+    - name: "gemini-2.0-flash-exp"
+      alias: "gemini-2.0-flash"
+
+    # Others
+    - name: "gpt-oss-120b-medium"
+      alias: "gpt-oss"
+    
+    # Image Generation
+    - name: "gemini-3-flash"
+      alias: "imagen-3" # Search-based
+    - name: "gemini-2.0-flash-exp" 
+      alias: "nanobanana" # True Multimodal (Native Image Gen)
+    - name: "gemini-3-pro-image-preview"
+      alias: "nanobanana-pro" # Real Gemini 3 Pro Image
+
+# Cấu hình tự động Retry khi lỗi (Rate Limit / Quota Exceeded)
+request-retry: 5
+max-retry-interval: 60
+
+# Hành động khi hết Quota
+quota-exceeded:
+  switch-project: true
+  switch-preview-model: true
+
+# Kích hoạt tìm kiếm THÔNG MINH (Dynamic Grounding)
+# Thử nghiệm với cả 2 tên gọi để tương thích mọi model
+payload:
+  default:
+    # Rule 1: Nano Banana Pro (Native Vision - NO SEARCH)
+    - models:
+        - name: "gemini-3-pro-image-preview"
+      params:
+        "tools": []
+        "safetySettings":
+          - category: "HARM_CATEGORY_HARASSMENT"
+            threshold: "BLOCK_NONE"
+          - category: "HARM_CATEGORY_HATE_SPEECH"
+            threshold: "BLOCK_NONE"
+          - category: "HARM_CATEGORY_SEXUALLY_EXPLICIT"
+            threshold: "BLOCK_NONE"
+          - category: "HARM_CATEGORY_DANGEROUS_CONTENT"
+            threshold: "BLOCK_NONE"
+
+    # Rule 2: Các model Gemini khác (Dùng Search)
+    - models:
+        - name: "gemini-*"        
+          protocol: "antigravity"
+      params:
+        "tools": [{"googleSearch": {}}]
+        "tool_config": { "function_calling_config": { "mode": "AUTO" } }
+        "safetySettings":
+          - category: "HARM_CATEGORY_HARASSMENT"
+            threshold: "BLOCK_NONE"
+          - category: "HARM_CATEGORY_HATE_SPEECH"
+            threshold: "BLOCK_NONE"
+          - category: "HARM_CATEGORY_SEXUALLY_EXPLICIT"
+            threshold: "BLOCK_NONE"
+          - category: "HARM_CATEGORY_DANGEROUS_CONTENT"
+            threshold: "BLOCK_NONE"
+
+routing:
+  strategy: "round-robin"
+
+debug: true

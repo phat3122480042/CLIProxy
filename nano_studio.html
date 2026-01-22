@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nano Studio 2.1 - Agentic AI</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #09090b;
+            --bg-panel: #18181b;
+            --bg-card: #27272a;
+            --accent: #d946ef;
+            /* Fuchsia Neon */
+            --accent-glow: rgba(217, 70, 239, 0.4);
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --border: #3f3f46;
+            --success: #22c55e;
+            --danger: #ef4444;
+        }
+
+        /* RESET & BASE */
+        * {
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* LAYOUT (3 COLUMNS) */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .main-chat {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: radial-gradient(circle at 50% 50%, #1c1c2e 0%, #09090b 100%);
+        }
+
+        .studio-panel {
+            width: 380px;
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: width 0.3s;
+        }
+
+        /* SIDEBAR COMPONENTS */
+        .brand {
+            padding: 20px;
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #d946ef, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .new-chat-btn {
+            margin: 0 15px 15px;
+            padding: 12px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .new-chat-btn:hover {
+            box-shadow: 0 0 15px var(--accent-glow);
+            transform: translateY(-1px);
+        }
+
+        .session-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 10px;
+        }
+
+        .session-item {
+            padding: 12px;
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            margin-bottom: 4px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .session-item:hover {
+            background: #27272a;
+            color: var(--text-main);
+        }
+
+        .session-item.active {
+            background: #27272a;
+            color: var(--accent);
+            border-left: 3px solid var(--accent);
+        }
+
+        .session-item .del-btn {
+            display: none;
+            color: var(--danger);
+            font-size: 0.8rem;
+            padding: 4px;
+            z-index: 2;
+        }
+
+        .session-item:hover .del-btn {
+            display: block;
+        }
+
+        /* CHAT AREA */
+        .chat-history {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 20%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            display: flex;
+            gap: 15px;
+            max-width: 100%;
+            group;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            cursor: default;
+        }
+
+        .user .avatar {
+            background: #3f3f46;
+        }
+
+        .ai .avatar {
+            background: linear-gradient(135deg, #d946ef, #8b5cf6);
+        }
+
+        .bubble {
+            background: var(--bg-card);
+            padding: 12px 16px;
+            border-radius: 12px;
+            max-width: 80%;
+            line-height: 1.5;
+            position: relative;
+            white-space: pre-wrap;
+            /* Respect newlines */
+        }
+
+        .user .bubble {
+            background: #2563eb;
+            color: white;
+        }
+
+        .ai .bubble {
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .bubble img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: transform 0.2s;
+        }
+
+        .bubble img:hover {
+            transform: scale(1.02);
+        }
+
+        .msg-tools {
+            position: absolute;
+            bottom: -30px;
+            display: none;
+            gap: 6px;
+            background: var(--bg-panel);
+            padding: 4px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            z-index: 10;
+        }
+
+        .user .msg-tools {
+            right: 0;
+        }
+
+        .ai .msg-tools {
+            left: 0;
+        }
+
+        .message:hover .msg-tools {
+            display: flex;
+        }
+
+        .tool-btn {
+            color: var(--text-muted);
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            border-radius: 4px;
+            transition: 0.2s;
+        }
+
+        .tool-btn:hover {
+            color: var(--text-main);
+            background: var(--bg-card);
+        }
+
+        .tool-btn.danger:hover {
+            color: var(--danger);
+        }
+
+        /* INPUT AREA */
+        .input-dock {
+            padding: 20px 15%;
+            background: linear-gradient(to top, var(--bg-dark), transparent);
+        }
+
+        .input-container {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.2);
+            transition: border-color 0.2s;
+        }
+
+        .input-container:focus-within {
+            border-color: var(--accent);
+        }
+
+        .media-preview-bar {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .thumb-wrap {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            flex-shrink: 0;
+        }
+
+        .thumb-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .thumb-remove {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        .text-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        textarea {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            resize: none;
+            min-height: 24px;
+            max-height: 200px;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        /* STUDIO PANEL (RIGHT) */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            padding: 0 10px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            position: relative;
+            transition: 0.2s;
+        }
+
+        .tab:hover {
+            color: var(--text-main);
+        }
+
+        .tab.active {
+            color: var(--text-main);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+        }
+
+        .gallery-grid {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            overflow-y: auto;
+            height: 100%;
+        }
+
+        .gal-item {
+            aspect-ratio: 1;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+
+        .gal-item:hover {
+            border-color: var(--accent);
+            transform: scale(0.98);
+        }
+
+        .gal-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* RATIO SELECTOR */
+        .ratio-select {
+            display: flex;
+            gap: 8px;
+            margin-top: 5px;
+            flex-wrap: wrap;
+        }
+
+        .ratio-chip {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            background: #27272a;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: 0.2s;
+        }
+
+        .ratio-chip:hover {
+            background: #3f3f46;
+        }
+
+        .ratio-chip.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* INSPECTOR MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--bg-panel);
+            width: 90%;
+            max-width: 1000px;
+            height: 80%;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-img-area {
+            flex: 2;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .modal-img-area img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .modal-info-area {
+            flex: 1;
+            padding: 25px;
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .info-block label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-block div {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        .prompt-box {
+            background: var(--bg-dark);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 110;
+        }
+
+        /* LOADING SPINNER */
+        .loader {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-right: 5px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="brand"><i class="fa-solid fa-bolt"></i> Nano Studio 2.1</div>
+
+        <button class="new-chat-btn" onclick="startNewSession()">
+            <i class="fa-solid fa-plus"></i> Chat Mới
+        </button>
+
+        <div class="session-list" id="sessionList"></div>
+
+        <div style="padding: 15px; border-top: 1px solid var(--border);">
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:5px;">System Status</div>
+            <div style="display:flex; align-items:center; gap:5px; font-size:0.8rem; color:var(--success);">
+                <i class="fa-solid fa-circle" style="font-size:8px;"></i> Agentic Core Active
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CHAT -->
+    <div class="main-chat">
+        <div class="chat-history" id="chatHistory">
+            <!-- Messages injected here -->
+        </div>
+
+        <div class="input-dock">
+            <div class="input-container">
+                <!-- Media Preview -->
+                <div class="media-preview-bar" id="mediaPreview"></div>
+
+                <!-- Text Input -->
+                <div class="text-row">
+                    <button class="tool-btn" onclick="document.getElementById('fileInput').click()"
+                        title="Đính kèm (Vision)">
+                        <i class="fa-solid fa-paperclip" style="font-size:1.1rem"></i>
+                    </button>
+                    <input type="file" id="fileInput" multiple accept="image/*" style="display:none"
+                        onchange="handleFileUpload(this)">
+
+                    <textarea id="promptInput" rows="1"
+                        placeholder="Nhập ý tưởng... 'Vẽ 4 con mèo', 'Sửa ảnh này thành anime'..."
+                        onkeydown="checkSubmit(event)"></textarea>
+
+                    <button class="new-chat-btn"
+                        style="margin:0; width:45px; height:45px; border-radius:12px; padding:0;"
+                        onclick="sendMessage()" id="sendBtn">
+                        <i class="fa-solid fa-location-arrow"></i>
+                    </button>
+                </div>
+
+                <!-- Controls -->
+                <div
+                    style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #27272a; padding-top:10px;">
+                    <div class="ratio-select" id="ratioSelect">
+                        <div class="ratio-chip" onclick="setRatio(this, '')">Auto</div>
+                        <div class="ratio-chip active" onclick="setRatio(this, ' --ar 2:3')">2:3 (Portrait)</div>
+                        <div class="ratio-chip" onclick="setRatio(this, ' --ar 16:9')">16:9 (Cinema)</div>
+                        <div class="ratio-chip" onclick="setRatio(this, ' --ar 1:1')">1:1 (Square)</div>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align:center; font-size:0.75rem; color:var(--text-muted); margin-top:10px;">
+                Agent: <b>Gemini 3 Flash</b> | Painter: <b>Nano Banana Pro</b> (Auto Connect)
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="studio-panel">
+        <div class="tabs">
+            <div class="tab active">Gallery</div>
+        </div>
+        <div class="gallery-grid" id="galleryGrid"></div>
+    </div>
+
+    <!-- INSPECTOR MODAL -->
+    <div class="modal-overlay" id="inspectorModal" onclick="if(event.target === this) closeModal()">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <div class="modal-content">
+            <div class="modal-img-area">
+                <img id="inspImg" src="">
+            </div>
+            <div class="modal-info-area">
+                <h2 style="margin:0 0 10px 0;">Image Details</h2>
+                <div class="info-block">
+                    <label>Created At</label>
+                    <div id="inspDate">--</div>
+                </div>
+                <div class="info-block">
+                    <label>Prompt</label>
+                    <div class="prompt-box" id="inspPrompt">--</div>
+                </div>
+                <div class="info-block">
+                    <label>Session</label>
+                    <div id="inspSession" style="color:var(--accent); cursor:pointer;">--</div>
+                </div>
+                <div style="margin-top:auto;">
+                    <a id="inspDownload" class="new-chat-btn" style="margin:0; text-decoration:none;">
+                        <i class="fa-solid fa-download"></i> Download Original
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISUAL DEBUG CONSOLE -->
+    <div id="debug-console"
+        style="position:fixed; bottom:10px; right:10px; width:300px; max-height:200px; overflow-y:auto; background:rgba(0,0,0,0.8); color:#0f0; font-family:monospace; font-size:10px; padding:10px; border-radius:8px; z-index:9999; pointer-events:none;">
+        <div>System Ready.</div>
+    </div>
+
+    <!-- APP LOGIC -->
+    <script>
+        function logToUI(msg, type = 'info') {
+            const el = document.getElementById('debug-console');
+            if (!el) return;
+            const row = document.createElement('div');
+            row.style.marginBottom = '2px';
+            if (type === 'error') row.style.color = '#ff5555';
+            else if (type === 'success') row.style.color = '#55ff55';
+            row.innerText = `> ${msg}`;
+            el.appendChild(row);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        // --- 1. CONFIG & DB ---
+        const ENDPOINTS = [
+            'http://localhost:8317/v1/chat/completions',      // Priority 1: Local
+            'http://26.197.92.157:8317/v1/chat/completions'   // Priority 2: Radmin VPN
+        ];
+        const API_KEY = 'sk-antigravity';
+
+        const MODELS = {
+            AGENT: 'gemini-3-flash', // Brain
+            PAINTER: 'nanobanana-pro'      // Muscle (Creative)
+        };
+
+        const DB_NAME = 'NanoStudioDB_V2'; // Bumped version for clean start if needed
+        const db = {
+            instance: null,
+            init: () => {
+                return new Promise((resolve) => {
+                    const req = indexedDB.open(DB_NAME, 1);
+                    req.onupgradeneeded = (e) => {
+                        const d = e.target.result;
+                        if (!d.objectStoreNames.contains('sessions')) d.createObjectStore('sessions', { keyPath: 'id' });
+                        if (!d.objectStoreNames.contains('messages')) {
+                            const store = d.createObjectStore('messages', { keyPath: 'id' });
+                            store.createIndex('sessionId', 'sessionId', { unique: false });
+                        }
+                        if (!d.objectStoreNames.contains('images')) {
+                            const store = d.createObjectStore('images', { keyPath: 'id' });
+                            store.createIndex('date', 'date');
+                        }
+                    };
+                    req.onsuccess = (e) => { db.instance = e.target.result; resolve(); };
+                });
+            },
+            put: (table, data) => new Promise(r => { const tx = db.instance.transaction([table], 'readwrite'); tx.objectStore(table).put(data).onsuccess = () => r(data); }),
+            getAll: (table, idx, val) => new Promise(r => {
+                const tx = db.instance.transaction([table], 'readonly');
+                const s = tx.objectStore(table);
+                const req = idx ? s.index(idx).getAll(val) : s.getAll();
+                req.onsuccess = () => r(req.result);
+            }),
+            delete: (table, key) => new Promise(r => { const tx = db.instance.transaction([table], 'readwrite'); tx.objectStore(table).delete(key).onsuccess = r; })
+        };
+
+        // --- 2. STATE ---
+        let currentSessionId = null;
+        let attachedImages = [];
+        let currentRatio = ' --ar 2:3';
+
+        // --- 3. INIT ---
+        window.onload = async () => {
+            await db.init();
+            await loadSessionList();
+            loadGallery();
+
+            document.getElementById('promptInput').addEventListener('input', function () {
+                this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
+            });
+        };
+
+        // --- 4. SESSION LOGIC ---
+        async function startNewSession() {
+            const id = 'sess_' + Date.now();
+            await db.put('sessions', { id, title: 'New Conversation', timestamp: Date.now() });
+            await loadSessionList();
+            loadChat(id);
+        }
+
+        async function loadSessionList() {
+            const list = await db.getAll('sessions');
+            list.sort((a, b) => b.timestamp - a.timestamp);
+            const container = document.getElementById('sessionList');
+            container.innerHTML = '';
+
+            list.forEach(s => {
+                const el = document.createElement('div');
+                el.className = `session-item ${s.id === currentSessionId ? 'active' : ''}`;
+                el.innerHTML = `
+                    <span onclick="loadChat('${s.id}')">${s.title}</span>
+                    <i class="fa-solid fa-trash del-btn" onclick="deleteSession('${s.id}')"></i>
+                `;
+                container.appendChild(el);
+            });
+            if (!currentSessionId && list.length) loadChat(list[0].id);
+        }
+
+        async function deleteSession(id) {
+            if (!confirm("Xóa phiên chat này?")) return;
+            await db.delete('sessions', id);
+            // Also delete messages? Ideally yes, but skipping for brevity
+            if (currentSessionId === id) currentSessionId = null;
+            loadSessionList();
+        }
+
+        async function loadChat(id) {
+            currentSessionId = id;
+            loadSessionList(); // Update active highlight
+
+            const msgs = await db.getAll('messages', 'sessionId', id);
+            msgs.sort((a, b) => a.timestamp - b.timestamp);
+
+            const container = document.getElementById('chatHistory');
+            container.innerHTML = '';
+            if (!msgs.length) {
+                container.innerHTML = `<div style="text-align:center; margin-top:100px; color:var(--text-muted); opacity:0.5;">
+                    <i class="fa-solid fa-robot" style="font-size:3rem;"></i><br><br>
+                    Agent đã sẵn sàng.<br>Gõ lệnh để bắt đầu.
+                </div>`;
+            } else {
+                msgs.forEach(renderMessage);
+            }
+            scrollToBottom();
+        }
+
+        // --- 5. CHAT LOGIC ---
+        function setRatio(el, val) {
+            document.querySelectorAll('.ratio-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            currentRatio = val;
+        }
+
+        function handleFileUpload(input) {
+            Array.from(input.files).forEach(f => {
+                const r = new FileReader();
+                r.onload = (e) => { attachedImages.push(e.target.result); renderMedia(); };
+                r.readAsDataURL(f);
+            });
+            input.value = '';
+        }
+        function renderMedia() {
+            const div = document.getElementById('mediaPreview');
+            div.innerHTML = attachedImages.map((img, i) => `
+                <div class="thumb-wrap"><img src="${img}">
+                <div class="thumb-remove" onclick="removeImg(${i})"><i class="fa-solid fa-xmark"></i></div></div>
+            `).join('');
+        }
+        function removeImg(i) { attachedImages.splice(i, 1); renderMedia(); }
+
+        function checkSubmit(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+
+        async function sendMessage() {
+            const txt = document.getElementById('promptInput').value.trim();
+            if (!txt && !attachedImages.length) return;
+            if (!currentSessionId) await startNewSession();
+
+            // 1. Save User Msg
+            const userMsg = {
+                id: 'msg_' + Date.now(),
+                sessionId: currentSessionId,
+                role: 'user',
+                text: txt + (currentRatio || ''),
+                images: [...attachedImages],
+                timestamp: Date.now()
+            };
+            await db.put('messages', userMsg);
+            renderMessage(userMsg);
+
+            // Clear Input
+            document.getElementById('promptInput').value = '';
+            attachedImages = []; renderMedia();
+            scrollToBottom();
+
+            // Update Title
+            const sess = await db.getAll('sessions'); // optimization needed normally
+            const s = sess.find(x => x.id === currentSessionId);
+            if (s && s.title === 'New Conversation') {
+                s.title = txt.substring(0, 25) || 'Conversation';
+                await db.put('sessions', s);
+                loadSessionList();
+            }
+
+            // 2. Run Agentic Workflow
+            runAgent(userMsg);
+        }
+
+        async function runAgent(userCtx) {
+            // Create Placeholder AI Msg
+            const botId = 'msg_' + (Date.now() + 1);
+            const botMsg = { id: botId, sessionId: currentSessionId, role: 'ai', text: '<i class="loader"></i> Thinking...', timestamp: Date.now() + 1 };
+            renderMessage(botMsg); scrollToBottom();
+
+            try {
+                // STEP 1: Agent Plan (Flash)
+                const agentPrompt = `
+                You are the AI Orchestrator for Nano Studio. Analyze the user request.
+                User Text: "${userCtx.text}"
+                User Images attached: ${userCtx.images.length > 0 ? 'YES' : 'NO'}.
+                
+                Goal:
+                1. If user just wants to chat -> Reply normally text.
+                2. If user wants images (generate, edit, draw) -> Design specific detail prompts.
+                
+                Output JSON ONLY:
+                {
+                   "reply": "Text response to user explaining what you will do.",
+                   "tasks": [
+                      { "prompt": "Detail prompt 1 in English", "ar": "16:9" },
+                      ...
+                   ]
+                }
+                If editing, describe changes in prompt.
+                `;
+
+                // Call Flash
+                logToUI("Agent thinking...");
+                const planRaw = await callApi(MODELS.AGENT, agentPrompt, [], true);
+
+                logToUI(`Agent Raw: ${planRaw.text.substring(0, 50)}...`);
+
+                let plan = { reply: planRaw.text, tasks: [] };
+                try {
+                    // Robus JSON Extraction
+                    let json = planRaw.text.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const first = json.indexOf('{');
+                    const last = json.lastIndexOf('}');
+                    if (first >= 0 && last > first) {
+                        json = json.substring(first, last + 1);
+                    }
+                    plan = JSON.parse(json);
+                } catch (e) {
+                    logToUI("Agent JSON Parse Warning (Fall back to text): " + e.message, 'warn');
+                }
+
+                // Update Bot Msg with Plan Reply
+                botMsg.text = plan.reply || planRaw.text;
+                if (!botMsg.text) botMsg.text = "(No text response from Agent)";
+
+                await db.put('messages', botMsg);
+                document.getElementById(botId).querySelector('.bubble').innerHTML = botMsg.text.replace(/\n/g, '<br>');
+
+                // STEP 2: Execute Tasks (Nano Pro)
+                if (plan.tasks && plan.tasks.length > 0) {
+                    botMsg.text += `<br><br><i>🚀 Generating ${plan.tasks.length} images...</i>`;
+                    document.getElementById(botId).querySelector('.bubble').innerHTML = botMsg.text;
+
+                    botMsg.generatedImages = [];
+
+                    for (const task of plan.tasks) {
+                        logToUI(`Painting: ${task.prompt.substring(0, 30)}...`);
+                        // Use user images for context if available (Edit mode)
+                        const res = await callApi(MODELS.PAINTER, task.prompt + (task.ar ? " " + task.ar : ""), userCtx.images);
+
+                        if (res.images && res.images.length) {
+                            const url = res.images[0];
+                            botMsg.generatedImages.push(url);
+                            await saveToGallery(url, task.prompt);
+
+                            // Append to UI immediately
+                            const imgHTML = `<img src="${url}" onclick="openInspector('${url}', '${btoa(task.prompt)}', '${currentSessionId}', ${Date.now()})">`;
+                            document.getElementById(botId).querySelector('.bubble').insertAdjacentHTML('beforeend', imgHTML);
+                        }
+                    }
+                    // Final Save
+                    await db.put('messages', botMsg);
+                }
+
+            } catch (err) {
+                logToUI("Workflow Error: " + err.message, 'error');
+                botMsg.text = "❌ Error: " + err.message;
+                document.getElementById(botId).querySelector('.bubble').innerHTML = botMsg.text;
+                await db.put('messages', botMsg);
+            }
+        }
+
+        // --- 6. RENDERERS ---
+        function renderMessage(msg) {
+            const div = document.createElement('div');
+            div.className = `message ${msg.role}`;
+            div.id = `dom_${msg.id}`;
+
+            let content = msg.text ? msg.text.replace(/\n/g, '<br>') : '';
+
+            // User images
+            if (msg.images && msg.images.length) {
+                content += '<div>';
+                msg.images.forEach(b64 => content += `<img src="${b64}" style="width:80px;height:80px;object-fit:cover;margin:2px;">`);
+                content += '</div>';
+            }
+            // AI Images
+            if (msg.generatedImages && msg.generatedImages.length) {
+                msg.generatedImages.forEach(url => {
+                    // We encode metadata roughly for the onclick (simplified)
+                    content += `<img src="${url}" onclick="openInspector('${url}', 'Generated Image', '${msg.sessionId}', ${msg.timestamp})">`;
+                });
+            }
+
+            div.innerHTML = `
+                <div class="avatar"><i class="fa-solid ${msg.role === 'user' ? 'fa-user' : 'fa-robot'}"></i></div>
+                <div class="bubble">
+                    <div id="content_${msg.id}">${content}</div>
+                    <div class="msg-tools">
+                        ${msg.role === 'user'
+                    ? `<div class="tool-btn" onclick="editMessage('${msg.id}')"><i class="fa-solid fa-pen"></i></div>`
+                    : `<div class="tool-btn" onclick="regenerateLast()"><i class="fa-solid fa-rotate-right"></i></div>`
+                }
+                        <div class="tool-btn danger" onclick="deleteMessage('${msg.id}')"><i class="fa-solid fa-trash"></i></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('chatHistory').appendChild(div);
+        }
+
+        function scrollToBottom() {
+            const c = document.getElementById('chatHistory');
+            c.scrollTop = c.scrollHeight;
+        }
+
+        // --- 7. CHAT ACTIONS ---
+        async function deleteMessage(id) {
+            if (!confirm('Xóa tin nhắn này?')) return;
+            await db.delete('messages', id);
+            document.getElementById(`dom_${id}`).remove();
+        }
+
+        async function editMessage(id) {
+            const msg = await db.getAll('messages'); // Simplified get
+            const target = msg.find(m => m.id === id);
+            if (!target) return;
+
+            const newText = prompt("Edit message:", target.text);
+            if (newText !== null && newText !== target.text) {
+                // Delete this and all subequent? Or just edit?
+                // For simplicity: Edit in place & re-run if it was the last user message.
+                target.text = newText;
+                await db.put('messages', target);
+
+                // Update UI
+                document.getElementById(`content_${id}`).innerText = newText;
+
+                // If it's the last user message, maybe trigger re-gen? 
+                // Let's keep it manual for now (User can click delete response -> regenerate)
+            }
+        }
+
+        // --- 8. STUDIO FEATURES ---
+        async function saveToGallery(b64, prompt) {
+            const img = { id: 'img_' + Date.now(), date: Date.now(), sessionId: currentSessionId, prompt: prompt, base64: b64 };
+            await db.put('images', img);
+            prependGallery(img);
+        }
+        function prependGallery(img) {
+            const div = document.createElement('div');
+            div.className = 'gal-item';
+            div.innerHTML = `<img src="${img.base64}">`;
+            div.onclick = () => openInspector(img.base64, btoa(img.prompt), img.sessionId, img.date);
+            document.getElementById('galleryGrid').prepend(div);
+        }
+        async function loadGallery() {
+            const imgs = await db.getAll('images');
+            imgs.sort((a, b) => b.date - a.date);
+            const g = document.getElementById('galleryGrid'); g.innerHTML = '';
+            imgs.forEach(prependGallery);
+        }
+
+        // --- 9. INSPECTOR ---
+        function openInspector(url, promptB64, sessId, date) {
+            let pWrapper = promptB64;
+            try { pWrapper = atob(promptB64); } catch (e) { pWrapper = promptB64; } // Handle raw vs base64
+
+            document.getElementById('inspImg').src = url;
+            document.getElementById('inspDate').innerText = new Date(date).toLocaleString();
+            document.getElementById('inspPrompt').innerText = pWrapper;
+            document.getElementById('inspSession').innerText = "Session ID: " + sessId;
+            document.getElementById('inspSession').onclick = () => { closeModal(); loadChat(sessId); };
+            document.getElementById('inspDownload').href = url;
+            document.getElementById('inspDownload').download = `nano_${date}.png`;
+
+            document.getElementById('inspectorModal').style.display = 'flex';
+        }
+        function closeModal() { document.getElementById('inspectorModal').style.display = 'none'; }
+
+        // --- 10. API CLIENT (Robust) ---
+        async function callApi(model, prompt, images = [], isJson = false) {
+            const messages = [{ role: 'user', content: [{ type: 'text', text: prompt }] }];
+            if (images.length) images.forEach(i => messages[0].content.push({ type: 'image_url', image_url: { url: i } }));
+
+            const body = { model, messages };
+            if (isJson) body.response_format = { type: "json_object" };
+
+            let lastError = null;
+
+            for (const host of ENDPOINTS) {
+                logToUI(`Connecting to ${host}...`);
+                try {
+                    const res = await fetch(host, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
+                        body: JSON.stringify(body),
+                        signal: AbortSignal.timeout(10000) // 10s Timeout per try
+                    });
+
+                    if (!res.ok) {
+                        const txt = await res.text();
+                        throw new Error(`${res.status} ${txt}`);
+                    }
+
+                    const data = await res.json();
+                    logToUI(`Connected!`, 'success');
+                    return {
+                        text: data.choices?.[0]?.message?.content || "",
+                        images: data.choices?.[0]?.message?.images?.map(i => i.image_url.url) || []
+                    };
+                } catch (e) {
+                    logToUI(`Failed: ${e.message}`, 'error');
+                    lastError = e;
+                }
+            }
+            throw new Error(`All connections failed. Please check Server Console.`);
+        }
+    </script>
+</body>
+
+</html>
